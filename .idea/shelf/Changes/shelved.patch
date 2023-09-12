@@ -1,0 +1,358 @@
+Index: src/main/java/lesson6/spring/AppConfig.java
+===================================================================
+diff --git a/src/main/java/lesson6/spring/AppConfig.java b/src/main/java/lesson6/spring/AppConfig.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/spring/AppConfig.java	
+@@ -0,0 +1,37 @@
++package lesson6.spring;
++
++import lesson6.UserDAO;
++import org.postgresql.ds.PGSimpleDataSource;
++import org.springframework.context.annotation.Bean;
++import org.springframework.context.annotation.Configuration;
++
++import javax.sql.DataSource;
++import java.sql.Connection;
++import java.sql.SQLException;
++
++@Configuration
++public class AppConfig {
++    @Bean
++    public DataSource dataSource() {
++        PGSimpleDataSource pgSimpleDataSource = new PGSimpleDataSource();
++        pgSimpleDataSource.setServerName("localhost");
++        pgSimpleDataSource.setDatabaseName("cohort26");
++        pgSimpleDataSource.setUser("postgres");
++        pgSimpleDataSource.setPassword("root");
++        return pgSimpleDataSource;
++    }
++
++    @Bean
++    public Connection connection() {
++        try{
++            return dataSource().getConnection();
++        } catch (SQLException e) {
++            throw new IllegalArgumentException(e);
++        }
++    }
++
++    @Bean
++    public UserDAO userDAO() {
++        return new UserDAO(dataSource());
++    }
++}
+\ No newline at end of file
+Index: src/main/java/lesson6/spring/UserDAOSpringDemo.java
+===================================================================
+diff --git a/src/main/java/lesson6/spring/UserDAOSpringDemo.java b/src/main/java/lesson6/spring/UserDAOSpringDemo.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/spring/UserDAOSpringDemo.java	
+@@ -0,0 +1,29 @@
++package lesson6.spring;
++
++import lesson6.User;
++import lesson6.UserDAO;
++import org.postgresql.ds.PGSimpleDataSource;
++import org.springframework.context.ApplicationContext;
++import org.springframework.context.annotation.AnnotationConfigApplicationContext;
++import org.springframework.context.annotation.Bean;
++import org.springframework.context.annotation.Configuration;
++
++import javax.sql.DataSource;
++import java.sql.Connection;
++import java.sql.SQLException;
++
++
++public class UserDAOSpringDemo {
++
++    public static void main(String[] args) {
++        ApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfig.class);
++        UserDAO userDAO = applicationContext.getBean(UserDAO.class);
++        User user = userDAO.findById(1);
++        System.out.println(user);
++        userDAO.updateById(1, "NoName", "qwerty111");
++        user = userDAO.findById(1);
++        System.out.println(user);
++        userDAO.deleteById(2);
++        userDAO.createNewUser("Alex", "fghtzs");
++    }
++}
+\ No newline at end of file
+Index: pom.xml
+===================================================================
+diff --git a/pom.xml b/pom.xml
+new file mode 100644
+--- /dev/null	
++++ b/pom.xml	
+@@ -0,0 +1,31 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
++    <modelVersion>4.0.0</modelVersion>
++
++    <groupId>sql.hello</groupId>
++    <artifactId>hello-sql</artifactId>
++    <version>0.0.1-SNAPSHOT</version>
++    <name>HelloSQL</name>
++    <description>HelloSQL application</description>
++
++    <properties>
++        <java.version>11</java.version>
++        <maven.compiler.source>11</maven.compiler.source>
++        <maven.compiler.target>11</maven.compiler.target>
++    </properties>
++
++    <dependencies>
++        <dependency>
++            <groupId>org.postgresql</groupId>
++            <artifactId>postgresql</artifactId>
++            <version>42.6.0</version>
++        </dependency>
++
++        <dependency>
++            <groupId>org.springframework</groupId>
++            <artifactId>spring-context</artifactId>
++            <version>5.3.29</version>
++        </dependency>
++    </dependencies>
++</project>
+\ No newline at end of file
+Index: .mvn/wrapper/maven-wrapper.properties
+===================================================================
+diff --git a/.mvn/wrapper/maven-wrapper.properties b/.mvn/wrapper/maven-wrapper.properties
+new file mode 100644
+--- /dev/null	
++++ b/.mvn/wrapper/maven-wrapper.properties	
+@@ -0,0 +1,18 @@
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   https://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.8.7/apache-maven-3.8.7-bin.zip
++wrapperUrl=https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.1.1/maven-wrapper-3.1.1.jar
+Index: src/main/java/lesson6/MyDataSource.java
+===================================================================
+diff --git a/src/main/java/lesson6/MyDataSource.java b/src/main/java/lesson6/MyDataSource.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/MyDataSource.java	
+@@ -0,0 +1,22 @@
++package lesson6;
++
++import org.postgresql.ds.PGSimpleDataSource;
++
++import javax.sql.DataSource;
++
++public class MyDataSource {
++    private static DataSource dataSource;
++
++    public static DataSource getDataSource() {
++        if (dataSource == null) {
++            // prepare connect to database
++            PGSimpleDataSource pgDS = new PGSimpleDataSource();
++            pgDS.setServerName("localhost");
++            pgDS.setDatabaseName("cohort26");
++            pgDS.setUser("postgres");
++            pgDS.setPassword("root");
++            dataSource = pgDS;
++        }
++        return dataSource;
++    }
++}
+\ No newline at end of file
+Index: src/main/java/lesson6/UserDAODemo.java
+===================================================================
+diff --git a/src/main/java/lesson6/UserDAODemo.java b/src/main/java/lesson6/UserDAODemo.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/UserDAODemo.java	
+@@ -0,0 +1,11 @@
++package lesson6;
++
++import java.sql.SQLException;
++
++public class UserDAODemo {
++    public static void main(String[] args) throws SQLException {
++        UserDAO userDAO = new UserDAO(MyDataSource.getDataSource());
++        User user = userDAO.findById(1);
++        System.out.println(user);
++    }
++}
+\ No newline at end of file
+Index: src/main/java/lesson6/MyConnection.java
+===================================================================
+diff --git a/src/main/java/lesson6/MyConnection.java b/src/main/java/lesson6/MyConnection.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/MyConnection.java	
+@@ -0,0 +1,18 @@
++package lesson6;
++import javax.sql.DataSource;
++import java.sql.Connection;
++import java.sql.SQLException;
++
++public class MyConnection {
++
++    private static Connection connection;
++
++    public static Connection getConnection(DataSource dataSource) {
++        try {
++            connection = dataSource.getConnection();
++        } catch (SQLException e) {
++            throw new IllegalArgumentException(e);
++        }
++        return connection;
++    }
++}
+\ No newline at end of file
+Index: src/main/java/lesson6/User.java
+===================================================================
+diff --git a/src/main/java/lesson6/User.java b/src/main/java/lesson6/User.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/User.java	
+@@ -0,0 +1,22 @@
++package lesson6;
++
++public class User {
++    private Integer id;
++    private String name;
++    private String password;
++
++    public User(Integer id, String name, String password) {
++        this.id = id;
++        this.name = name;
++        this.password = password;
++    }
++
++    @Override
++    public String toString() {
++        return "User{" +
++                "id=" + id +
++                ", name='" + name + '\'' +
++                ", password='" + password + '\'' +
++                '}';
++    }
++}
+\ No newline at end of file
+Index: src/main/java/lesson6/UserDAO.java
+===================================================================
+diff --git a/src/main/java/lesson6/UserDAO.java b/src/main/java/lesson6/UserDAO.java
+new file mode 100644
+--- /dev/null	
++++ b/src/main/java/lesson6/UserDAO.java	
+@@ -0,0 +1,91 @@
++package lesson6;
++
++import org.postgresql.ds.PGSimpleDataSource;
++
++import javax.sql.DataSource;
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.util.List;
++
++/*
++
++Создание таблицы
++
++CREATE TABLE users (
++  id      	SERIAL PRIMARY KEY,
++  name    	TEXT NOT NULL,
++  password  TEXT NOT NULL
++);
++
++Добавление записей
++
++INSERT INTO users (name, password) VALUES ('Aleksey', '*****'), ('Viktors', '***'), ('Vadim', '*');
++
++Просмотр всех записей
++
++SELECT * FROM users;
++
++ */
++public class UserDAO {
++
++    private Connection connection;
++
++    public UserDAO(Connection connection) {
++        this.connection = connection;
++    }
++
++    public void createNewUser(String name, String password) {
++        try {
++            PreparedStatement preparedStatement = connection
++                    .prepareStatement("insert into users (name, password) values (?, ?)");
++            preparedStatement.setString(1, name);
++            preparedStatement.setString(2, password);
++            preparedStatement.executeUpdate();
++        } catch (SQLException e) {
++            throw new IllegalArgumentException(e);
++        }
++    }
++
++    public User findById(Integer id) {
++        User user = null;
++
++        try {
++            PreparedStatement preparedStatement = connection
++                    .prepareStatement("select * from users where id = ?");
++            preparedStatement.setInt(1, id);
++            ResultSet resultSet = preparedStatement.executeQuery();
++            if (resultSet.next()) {
++                user = new User(resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3));
++            }
++        } catch (SQLException e) {
++            throw new IllegalArgumentException(e);
++        }
++        return user;
++    }
++
++    public void updateById(Integer id, String newName, String newPassword) {
++        try {
++            PreparedStatement preparedStatement = connection
++                    .prepareStatement("update users set name = ?, password = ? where id = ?");
++            preparedStatement.setString(1, newName);
++            preparedStatement.setString(2, newPassword);
++            preparedStatement.setInt(3, id);
++            preparedStatement.executeUpdate();
++        } catch (SQLException e) {
++            throw new IllegalArgumentException(e);
++        }
++    }
++
++    public void deleteById(Integer id) {
++        try {
++            PreparedStatement preparedStatement = connection
++                    .prepareStatement("delete from users where id = ?");
++            preparedStatement.setInt(1, id);
++            preparedStatement.executeUpdate();
++        } catch (SQLException e) {
++            throw new IllegalArgumentException(e);
++        }
++    }
++}
+\ No newline at end of file
+Index: src/main/resources/application.properties
+===================================================================
+diff --git a/src/main/resources/application.properties b/src/main/resources/application.properties
+new file mode 100644
+--- /dev/null	
++++ b/src/main/resources/application.properties	
+@@ -0,0 +1,1 @@
++
